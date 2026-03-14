@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora Científica</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --panel: #12121a;
+      --border: #2a2a3a;
+      --accent: #00f5a0;
+      --accent2: #00d9f5;
+      --warn: #f5a000;
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* Grid de fondo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    header .badge {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+      letter-spacing: 0.1em;
+    }
+
+    header h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .tab-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.5rem 1.1rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .tab-btn.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* Paneles */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      display: none;
+      animation: fadeUp 0.3s ease both;
+    }
+    .panel.active { display: block; }
+
+    .panel h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      color: var(--text);
+    }
+
+    .panel .formula {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent2);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Formularios */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.05em;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+    .field select option { background: var(--panel); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.75rem 1.8rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* Resultado */
+    .result-box {
+      margin-top: 1.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      display: none;
+    }
+    .result-box.visible { display: block; animation: fadeUp 0.3s ease; }
+
+    .result-box .result-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-box .result-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .result-box .result-meta {
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .result-box .result-meta span {
+      color: var(--text);
+    }
+
+    .result-box.error .result-value { color: var(--warn); }
+
+    /* Loader */
+    .loader {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--bg);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    /* API URL info */
+    .api-info {
+      margin-top: 2rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .api-info .url { color: var(--accent2); }
+
+    /* Config API */
+    .api-config {
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .api-config label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .api-config input {
+      flex: 1;
+      min-width: 220px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.8rem;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      outline: none;
+    }
+    .api-config input:focus { border-color: var(--accent); }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">FASTAPI + HTML/JS</div>
+    <h1>Calculadora Científica</h1>
+    <p>Frontend conectado a una API REST en Python</p>
+  </header>
+
+  <!-- Config URL de la API -->
+  <div class="api-config">
+    <label>🔗 URL DE LA API</label>
+    <input type="text" id="apiBase" value="http://localhost:8000" placeholder="http://localhost:8000"/>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('basico')">Aritmética</button>
+    <button class="tab-btn" onclick="showTab('funcion')">Funciones</button>
+    <button class="tab-btn" onclick="showTab('ek')">Energía Cinética</button>
+    <button class="tab-btn" onclick="showTab('caida')">Caída Libre</button>
+    <button class="tab-btn" onclick="showTab('ohm')">Ley de Ohm</button>
+  </div>
+
+  <!-- Panel: Aritmética -->
+  <div class="panel active" id="tab-basico">
+    <h2>Operaciones Básicas</h2>
+    <p class="formula">POST /calcular/basico</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>VALOR A</label>
+        <input type="number" id="b-a" value="10"/>
+      </div>
+      <div class="field">
+        <label>OPERACIÓN</label>
+        <select id="b-op">
+          <option value="suma">Suma</option>
+          <option value="resta">Resta</option>
+          <option value="multiplicacion">Multiplicación</option>
+          <option value="division">División</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>VALOR B</label>
+        <input type="number" id="b-b" value="4"/>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcBasico()"><span id="b-loader"></span>Calcular</button>
+    <div class="result-box" id="b-result">
+      <div class="result-label">RESULTADO</div>
+      <div class="result-value" id="b-res-val">—</div>
+      <div class="result-meta" id="b-res-meta"></div>
+    </div>
+  </div>
+
+  <!-- Panel: Funciones -->
+  <div class="panel" id="tab-funcion">
+    <h2>Funciones Matemáticas</h2>
+    <p class="formula">POST /calcular/funcion</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>VALOR</label>
+        <input type="number" id="f-val" value="45"/>
+      </div>
+      <div class="field">
+        <label>FUNCIÓN</label>
+        <select id="f-fn">
+          <option value="sqrt">√ Raíz cuadrada</option>
+          <option value="log">ln (log natural)</option>
+          <option value="log10">log₁₀</option>
+          <option value="sin">sin (grados)</option>
+          <option value="cos">cos (grados)</option>
+          <option value="tan">tan (grados)</option>
+          <option value="exp">eˣ</option>
+          <option value="factorial">n!</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcFuncion()"><span id="f-loader"></span>Calcular</button>
+    <div class="result-box" id="f-result">
+      <div class="result-label">RESULTADO</div>
+      <div class="result-value" id="f-res-val">—</div>
+      <div class="result-meta" id="f-res-meta"></div>
+    </div>
+  </div>
+
+  <!-- Panel: Energía cinética -->
+  <div class="panel" id="tab-ek">
+    <h2>Energía Cinética</h2>
+    <p class="formula">Ec = ½ × m × v²  →  POST /fisica/energia-kinetica</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>MASA (kg)</label>
+        <input type="number" id="ek-m" value="70"/>
+      </div>
+      <div class="field">
+        <label>VELOCIDAD (m/s)</label>
+        <input type="number" id="ek-v" value="10"/>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcEK()"><span id="ek-loader"></span>Calcular</button>
+    <div class="result-box" id="ek-result">
+      <div class="result-label">ENERGÍA CINÉTICA</div>
+      <div class="result-value" id="ek-res-val">—</div>
+      <div class="result-meta" id="ek-res-meta"></div>
+    </div>
+  </div>
+
+  <!-- Panel: Caída libre -->
+  <div class="panel" id="tab-caida">
+    <h2>Caída Libre</h2>
+    <p class="formula">t = √(2h/g)  |  v = g×t  →  POST /fisica/caida-libre</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>ALTURA (m)</label>
+        <input type="number" id="cl-h" value="45"/>
+      </div>
+      <div class="field">
+        <label>GRAVEDAD (m/s²)</label>
+        <input type="number" id="cl-g" value="9.81"/>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcCaida()"><span id="cl-loader"></span>Calcular</button>
+    <div class="result-box" id="cl-result">
+      <div class="result-label">RESULTADOS</div>
+      <div class="result-value" id="cl-res-val">—</div>
+      <div class="result-meta" id="cl-res-meta"></div>
+    </div>
+  </div>
+
+  <!-- Panel: Ley de Ohm -->
+  <div class="panel" id="tab-ohm">
+    <h2>Ley de Ohm</h2>
+    <p class="formula">V = I × R  →  POST /fisica/ley-ohm  |  Dejá vacío el campo a calcular</p>
+    <div class="form-grid">
+      <div class="field">
+        <label>VOLTAJE (V)</label>
+        <input type="number" id="ohm-v" placeholder="dejar vacío para calcular"/>
+      </div>
+      <div class="field">
+        <label>CORRIENTE (A)</label>
+        <input type="number" id="ohm-i" value="2"/>
+      </div>
+      <div class="field">
+        <label>RESISTENCIA (Ω)</label>
+        <input type="number" id="ohm-r" value="10"/>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcOhm()"><span id="ohm-loader"></span>Calcular</button>
+    <div class="result-box" id="ohm-result">
+      <div class="result-label">RESULTADO</div>
+      <div class="result-value" id="ohm-res-val">—</div>
+      <div class="result-meta" id="ohm-res-meta"></div>
+    </div>
+  </div>
+
+  <div class="api-info">
+    💡 Esta página consume la API en <span class="url" id="api-url-display">http://localhost:8000</span> — iniciá el servidor con: <span class="url">uvicorn main:app --reload</span>
+  </div>
+
+</div>
+
+<script>
+  const apiBase = () => document.getElementById('apiBase').value.replace(/\/$/, '');
+  document.getElementById('apiBase').addEventListener('input', () => {
+    document.getElementById('api-url-display').textContent = apiBase();
+  });
+
+  function showTab(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  function setLoader(id, on) {
+    const el = document.getElementById(id);
+    el.innerHTML = on ? '<span class="loader"></span>' : '';
+  }
+
+  function showResult(boxId, valId, metaId, data, isError = false) {
+    const box = document.getElementById(boxId);
+    box.className = 'result-box visible' + (isError ? ' error' : '');
+    document.getElementById(valId).textContent = data.value;
+    document.getElementById(metaId).innerHTML = data.meta || '';
+  }
+
+  async function postAPI(endpoint, body) {
+    const res = await fetch(apiBase() + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  async function calcBasico() {
+    setLoader('b-loader', true);
+    try {
+      const data = await postAPI('/calcular/basico', {
+        a: parseFloat(document.getElementById('b-a').value),
+        b: parseFloat(document.getElementById('b-b').value),
+        operacion: document.getElementById('b-op').value
+      });
+      if (data.detail) throw new Error(data.detail);
+      showResult('b-result', 'b-res-val', 'b-res-meta', {
+        value: data.resultado,
+        meta: `<span>${data.a}</span> ${data.operacion} <span>${data.b}</span>`
+      });
+    } catch (e) {
+      showResult('b-result', 'b-res-val', 'b-res-meta', { value: 'Error', meta: e.message }, true);
+    }
+    setLoader('b-loader', false);
+  }
+
+  async function calcFuncion() {
+    setLoader('f-loader', true);
+    try {
+      const data = await postAPI('/calcular/funcion', {
+        valor: parseFloat(document.getElementById('f-val').value),
+        funcion: document.getElementById('f-fn').value
+      });
+      if (data.detail) throw new Error(data.detail);
+      showResult('f-result', 'f-res-val', 'f-res-meta', {
+        value: Number(data.resultado.toFixed(6)),
+        meta: `<span>${data.funcion}</span>(<span>${data.valor}</span>)`
+      });
+    } catch (e) {
+      showResult('f-result', 'f-res-val', 'f-res-meta', { value: 'Error', meta: e.message }, true);
+    }
+    setLoader('f-loader', false);
+  }
+
+  async function calcEK() {
+    setLoader('ek-loader', true);
+    try {
+      const data = await postAPI('/fisica/energia-kinetica', {
+        masa: parseFloat(document.getElementById('ek-m').value),
+        velocidad: parseFloat(document.getElementById('ek-v').value)
+      });
+      if (data.detail) throw new Error(data.detail);
+      showResult('ek-result', 'ek-res-val', 'ek-res-meta', {
+        value: data.energia_joules + ' J',
+        meta: `Masa: <span>${data.masa_kg} kg</span> | Velocidad: <span>${data.velocidad_ms} m/s</span>`
+      });
+    } catch (e) {
+      showResult('ek-result', 'ek-res-val', 'ek-res-meta', { value: 'Error', meta: e.message }, true);
+    }
+    setLoader('ek-loader', false);
+  }
+
+  async function calcCaida() {
+    setLoader('cl-loader', true);
+    try {
+      const data = await postAPI('/fisica/caida-libre', {
+        altura: parseFloat(document.getElementById('cl-h').value),
+        g: parseFloat(document.getElementById('cl-g').value)
+      });
+      if (data.detail) throw new Error(data.detail);
+      showResult('cl-result', 'cl-res-val', 'cl-res-meta', {
+        value: data.tiempo_caida_s + ' s',
+        meta: `Velocidad final: <span>${data.velocidad_final_ms} m/s</span> | Altura: <span>${data.altura_m} m</span> | g = <span>${data.gravedad_ms2} m/s²</span>`
+      });
+    } catch (e) {
+      showResult('cl-result', 'cl-res-val', 'cl-res-meta', { value: 'Error', meta: e.message }, true);
+    }
+    setLoader('cl-loader', false);
+  }
+
+  async function calcOhm() {
+    setLoader('ohm-loader', true);
+    try {
+      const v = document.getElementById('ohm-v').value;
+      const i = document.getElementById('ohm-i').value;
+      const r = document.getElementById('ohm-r').value;
+      const data = await postAPI('/fisica/ley-ohm', {
+        voltaje: v === '' ? null : parseFloat(v),
+        corriente: i === '' ? null : parseFloat(i),
+        resistencia: r === '' ? null : parseFloat(r)
+      });
+      if (data.detail) throw new Error(data.detail);
+      showResult('ohm-result', 'ohm-res-val', 'ohm-res-meta', {
+        value: Number(data.valor.toFixed(4)) + ' ' + data.unidad,
+        meta: `<span>${data.calculado}</span> calculado con: <span>${data.formula}</span>`
+      });
+    } catch (e) {
+      showResult('ohm-result', 'ohm-res-val', 'ohm-res-meta', { value: 'Error', meta: e.message }, true);
+    }
+    setLoader('ohm-loader', false);
+  }
+</script>
+</body>
+</html>
